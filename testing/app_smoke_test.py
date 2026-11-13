@@ -27,11 +27,19 @@ def get(url):
 
 def run_checks(zip_code="60616"):
     """Run the nine checks; return their results for CLI or pytest."""
-    settings = load_dotenv(ROOT / ".env")
-    outputs = load_dotenv(ROOT / "stack_outputs.env")
-    host = outputs["ALB_DNS_NAME"]
-    weather = f"http://{host}:{settings['WEATHER_LISTENER_PORT']}"
-    advisor = f"http://{host}:{settings['ADVISOR_LISTENER_PORT']}"
+    
+    import subprocess
+
+    def terraform_output(name):
+        return subprocess.check_output(
+            ["terraform", "output", "-raw", name],
+            cwd=ROOT,
+            text=True
+        ).strip()
+
+    weather = terraform_output("weather_url")
+    advisor = terraform_output("advisor_url")
+
     results = []
 
     def check(name, ok, detail=""):

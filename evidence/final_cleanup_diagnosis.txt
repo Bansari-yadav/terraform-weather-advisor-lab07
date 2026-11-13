@@ -1,0 +1,22 @@
+LOAD BALANCERS
+
+TARGET GROUP: itmo-444-544-weather-tg
+{
+  "ARN": "arn:aws:elasticloadbalancing:us-east-2:587104705562:targetgroup/itmo-444-544-weather-tg/88a24f05bc33f564",
+  "LoadBalancerArns": []
+}
+
+TARGET GROUP: itmo-444-544-advisor-tg
+{
+  "ARN": "arn:aws:elasticloadbalancing:us-east-2:587104705562:targetgroup/itmo-444-544-advisor-tg/b4be73b741cf4162",
+  "LoadBalancerArns": []
+}
+
+NONTERMINATED APP INSTANCES: []
+No app instances remain. Removing the database now.
+Deleting database without a final snapshot or retained backups...
+Waiting for database deletion...
+Removing the database subnet group...
+Removing the database security group...
+Removing the database password parameter...
+Database cleanup finished. Verify snapshots and backups separately.

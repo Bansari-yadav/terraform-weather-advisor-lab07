@@ -4,7 +4,7 @@ Graduate cloud-computing lab built with Python/boto3, Node.js, Amazon EC2, an Ap
 
 ## Report and evidence
 
-- [Report and requirement audit](Lab06_Report_Draft.md)
+- [Report and requirement audit](Lab06_Report.md)
 - [Screenshots and saved outputs](evidence/)
 
 ## Recorded results
@@ -15,7 +15,7 @@ Graduate cloud-computing lab built with Python/boto3, Node.js, Amazon EC2, an Ap
 - All nine application smoke checks passed.
 - AWS cleanup verified no named lab resources or database backups remained.
 
-The report identifies remaining submission qualifications, including the exact-ZIP integration-test difference and Google API-key cleanup confirmation.
+The final deployed integration suite explicitly verified ZIP 60616 miss then hit and history, with all ten tests passing. See SS22 and the final-revision output in evidence/. Final cleanup is verified in SS23. Google API-key deletion still requires student confirmation.
 
 ## Source
 

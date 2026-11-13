@@ -40,31 +40,51 @@ def test_both_target_groups_healthy(live_lab):
 
 
 def test_forecast_miss_then_hit_and_history(live_lab):
-    config, outputs, db, aws, weather = live_lab
-    # Find a genuinely fresh ZIP rather than assuming one is uncached.
-    for zip_code in (
-        "02108", "80202", "30303", "85001", "97201", "55401", "20001"
-    ):
-        response = requests.get(
-            weather + "/weather", params={"zip": zip_code}, timeout=75
-        )
-        assert response.status_code == 200
-        if response.json().get("cache") == "miss":
-            break
-    else:
-        pytest.fail("All candidate ZIPs are cached; retry after cache expiry.")
+    """Verify ZIP 60616 returns a cache miss, then hit, and appears in history."""
+    import time
 
-    repeat = requests.get(
-        weather + "/weather", params={"zip": zip_code}, timeout=75
+    config, outputs, db, aws, weather = live_lab
+    zip_code = "60616"
+
+    first = requests.get(
+        weather + "/weather",
+        params={"zip": zip_code},
+        timeout=75,
     )
-    assert repeat.status_code == 200
-    assert repeat.json()["cache"] == "hit"
+    assert first.status_code == 200, first.text
+
+    if first.json().get("cache") == "hit":
+        wait_seconds = config.cache_seconds + 2
+        print(
+            f"60616 is cached. Waiting {wait_seconds} seconds for expiry.",
+            flush=True,
+        )
+        time.sleep(wait_seconds)
+        first = requests.get(
+            weather + "/weather",
+            params={"zip": zip_code},
+            timeout=75,
+        )
+        assert first.status_code == 200, first.text
+
+    assert first.json().get("cache") == "miss", first.text
+    print("60616 first uncached request: miss", flush=True)
+
+    second = requests.get(
+        weather + "/weather",
+        params={"zip": zip_code},
+        timeout=75,
+    )
+    assert second.status_code == 200, second.text
+    assert second.json().get("cache") == "hit", second.text
+    print("60616 repeat request: hit", flush=True)
 
     history = requests.get(weather + "/history", timeout=15)
-    assert history.status_code == 200
+    assert history.status_code == 200, history.text
     assert any(
         row["zip"] == zip_code for row in history.json()["lookups"]
     )
+    print("History contains 60616: PASS", flush=True)
 
 
 @pytest.mark.parametrize("zip_code,expected", [("abc", 400), ("00000", 404)])

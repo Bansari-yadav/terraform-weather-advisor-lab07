@@ -1,20 +1,20 @@
 {
-  "zip": "60616",
   "city": "Chicago",
-  "state": "IL",
   "forecast": {
-    "name": "Tonight",
     "isDaytime": false,
-    "windSpeed": "5 mph",
-    "temperature": 50,
-    "shortForecast": "Clear",
+    "name": "Tonight",
+    "precipitationChance": 84,
+    "shortForecast": "Rain And Snow",
+    "temperature": 35,
     "temperatureUnit": "F",
-    "precipitationChance": 0
+    "windSpeed": "15 mph"
   },
   "latitude": "41.8426",
   "longitude": "-87.6306",
+  "state": "IL",
+  "zip": "60616",
   "cache": "hit",
-  "advice": "Wear a light jacket or a sweater to stay comfortable in the cool evening air. You will not need rain gear since the sky will be clear.",
+  "advice": "Wear a winter coat, hat, gloves, and waterproof boots. Bring an umbrella for the rain and snow.",
   "source": "gemini",
-  "model": "gemini-3.1-flash-lite"
+  "model": "gemini-3.5-flash-lite"
 }

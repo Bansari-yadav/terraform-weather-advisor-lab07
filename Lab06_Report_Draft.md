@@ -2,7 +2,7 @@
 
 **Course:** ITMO 544 — Graduate submission  
 **Student:** Bansari Yadav  
-**Status:** Draft for student review. Live AWS testing and AWS cleanup are complete. Deletion of the replacement Google AI Studio key still needs confirmation.
+**Status:** Final technical results recorded; student review required. The final source passed all ten live integration tests, including ZIP 60616 miss then hit, and the final AWS deployment was deleted and verified. Deletion of the replacement Google AI Studio key still needs student confirmation.
 
 ## 1. Implementation and architecture
 
@@ -184,17 +184,17 @@ For creating the database, Python made it easier to separate configuration, netw
 | Repeat creation/deletion | Database repeat tests, launch-template one-version test, complete stack repeat-create/delete test. |
 | Secure secret input/generation | `getpass` and `secrets.token_hex(16)`; no real secret is included in the report. |
 | Smoke test runnable through pytest | `test_all_nine_smoke_checks` calls `testing/app_smoke_test.py`'s `run_checks`. |
-| Real integration tests | **10 passed**; `evidence/graduate_integration_tests.txt`, SS18. |
+| Real integration tests | Final source: **10 passed in 27.35 seconds**, including explicit ZIP 60616 miss then hit and history; [final output](evidence/final_revision_integration_tests.txt), [SS22](evidence/SS22.png). SS18 records the earlier deployment. |
 | Real marked chaos tests | **2 passed**; `evidence/graduate_chaos_tests.txt`, SS19. The test-session duration includes time waiting for manual browser restart prompts; it is not the measured service-recovery time. |
 | Unit tests without real AWS credentials | Initial evidence: **30 passed, 28 deselected**, SS21b. Final audit after adding a configuration test: **31 passed, 28 deselected**, `evidence/final_unit_tests_without_credentials.txt`. |
 
-The final local configuration change was validated with mocked tests after AWS cleanup; the live deployment was not recreated solely for that change. Live evidence reflects the same port values used in the lab (3000, 5432, 8080, 8081). The new database-port test verifies that changing the configured port changes both the RDS request and security-group rule.
+The final source, including configuration-driven database port and the corrected 60616 integration test, was subsequently redeployed. Both target groups became healthy and all ten live integration tests passed in 27.35 seconds. The final revision also passed 31 unit tests before deployment. The no-credentials evidence separately records 31 passing mocked tests. The new database-port test verifies that changing the configured port changes both the RDS request and security-group rule.
 
 Earlier integration failures occurred while the old weather target/instance was still being released after replacement. Inspection confirmed the settled ASG and healthy target, and the rerun passed all ten tests. Cleanup also encountered asynchronous deletion delays; the deletion code now retries the specific target-group `ResourceInUse` condition instead of treating it as completed deletion.
 
 ## 8. Cleanup and cost record
 
-Application resources were deleted before the database. The database deletion used `SkipFinalSnapshot=True` and `DeleteAutomatedBackups=True`. Final verification lists were empty for database instances, snapshots, automated backups, subnet groups, load balancers, target groups, Auto Scaling Groups, launch templates, both application roles/profiles, both secret parameters, the ALB/database security groups, nonterminated lab instances, and the temporary browser-SSH rule. The pre-existing app security group and local project were intentionally retained.
+The initial cleanup removed the application stack before the database. In the final deployment, the app instances and ALB were removed first; target-group deletion returned a persistent ResourceInUse error despite empty associations. With no app instances remaining, the database was removed rather than left running during that investigation. The remaining target groups were subsequently confirmed absent, and the rest of the stack cleanup finished. The database deletion used `SkipFinalSnapshot=True` and `DeleteAutomatedBackups=True`. Final verification lists were empty for database instances, snapshots, automated backups, subnet groups, load balancers, target groups, Auto Scaling Groups, launch templates, both application roles/profiles, both secret parameters, the ALB/database security groups, nonterminated lab instances, and the temporary browser-SSH rule. The pre-existing app security group and local project were intentionally retained.
 
 Free coverage was not confirmed: the account's Credits page showed no remaining credits, and the visible Free Tier page did not establish an RDS allowance. I therefore do not claim this run had zero cost. Check the final Billing view after usage reporting catches up. Cleanup verification concerns these named lab resources, not a claim that the entire AWS account contains no unrelated resources or that already accrued charges disappear.
 
@@ -202,7 +202,7 @@ Free coverage was not confirmed: the account's Credits page showed no remaining 
 
 ## 9. Before submitting
 
-- Review this draft and make sure the explanations reflect your understanding.
+- Review this report and make sure the explanations reflect your understanding.
 - Confirm deletion/restriction of the Google AI Studio key and update the preceding status.
 - Include the report, relevant source code/tests, sanitized `.env.example`, and evidence as required by the course upload page.
 - Keep `.env`, private keys, virtual environments, `node_modules`, caches, and any real credentials out of an uploaded code package.
@@ -211,8 +211,14 @@ Free coverage was not confirmed: the account's Credits page showed no remaining 
 
 **Assignment source:** `Weather_Advisor_TwoTier_APIs.pdf`, especially Sections 15.1, 16.1, and 16.2. Evidence links refer to the saved lab outputs and screenshots, not invented results.
 
-## 10. Strict requirement audit follow-up
+## 10. Final requirement audit follow-up — resolved technical findings
 
-The PDF's graduate integration checklist specifically names `/weather?zip=60616` for an asserted miss followed by hit. The marked integration cache test currently selects another uncached ZIP. The saved weather journal proves a 60616 miss/hit sequence, and the pytest smoke test uses 60616, but the marked cache test does not explicitly assert that exact sequence for 60616. This is a strict wording mismatch, not missing cache functionality. Do not describe that exact pytest requirement as fully satisfied without updating and running the specific test. AWS remains deleted; no redeployment was performed for this audit.
+The integration test was changed to use exactly `/weather?zip=60616`, assert a cache miss and then a hit, and confirm 60616 appears in history. The final deployed run printed all three confirmations and passed all ten integration tests. See [final integration output](evidence/final_revision_integration_tests.txt) and [SS22](evidence/SS22.png).
 
-The final database-port configuration edit also introduced a missing local configuration variable in the integration database-reachability function. This was corrected and the function was executed with a mocked socket timeout, verifying the configured host/port without contacting AWS. The correction is recorded in `evidence/integration_port_local_check.txt`. The saved ten-test live pass predates these final source edits; it should not be presented as a live run of the final edited source.
+The database-port integration check's missing configuration variable was corrected before this final live run. The passing final integration suite exercises that corrected code. The earlier local check is retained as historical evidence, not substituted for the final live result.
+
+The final deployment's complete removal is documented in [final cleanup verification](evidence/final_revision_cleanup_verification.txt) and [SS23](evidence/SS23.png). Empty lists confirm no named lab database, snapshots, automated backups, ALB, target groups, ASGs, templates, roles, profiles, secret parameters, or nonterminated app instances remained. Resource-creation/deletion scripts and final verification were Python-based.
+
+Final-revision evidence also includes [unit results](evidence/final_revision_unit_tests.txt), [database creation](evidence/final_revision_database_creation.txt), and [stack creation](evidence/final_revision_stack_creation.txt). Earlier screenshots record earlier runs and remain valid historical evidence.
+
+The remaining external cleanup confirmation is deletion or restriction of the replacement Gemini key in Google AI Studio. The SSM parameter is confirmed absent. Student review and the course portal's upload instructions still apply.
