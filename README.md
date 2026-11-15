@@ -228,42 +228,96 @@ python .\testing\app_smoke_test.py
 
 # 7. Terraform Experiments
 
+
 ## Experiment 1 — Imperative vs. Declarative Infrastructure
 
-The original Bash/Python deployment approach was compared against the Terraform implementation.
+### Objective
 
-The initial recorded counts were:
+This experiment compares the imperative Bash deployment scripts from Lab 06 with the declarative Terraform implementation in Lab 07.
 
-| Code group | Recorded lines |
+The goal is to understand the difference in code complexity, infrastructure management, and repeatability.
+
+### Code Line Comparison
+
+I counted the nonblank, non-comment lines in the original Bash scripts and the Terraform configuration files using PowerShell.
+
+| Component | Lines of Code |
 |---|---:|
-| Terraform `.tf` files | 338 |
-| Previous Bash and Python scripts combined | 666 |
+| `create_app_stack.sh` | 383 |
+| `delete_app_stack.sh` | 127 |
+| **Total Bash code** | **510** |
+| Terraform `.tf` files | 318 |
+| `user-data.sh.tftpl` | 28 |
+| **Total Terraform code** | **346** |
+| **Reduction** | **164 lines (32.2%)** |
 
-These are preliminary raw measurements. They are not a like-for-like comparison because the Terraform user-data template and the professor's separate Bash-only categories were not included consistently.
+The Terraform count excludes the practice configuration in `first-taste/main.tf`.
 
-The final effort comparison should separately count:
+### Comparison of Infrastructure Management
 
-| Required measurement | Value |
-|---|---|
-| Previous Bash-only code, excluding comments | To be measured |
-| Terraform `.tf` and `user-data.sh.tftpl`, excluding comments | To be measured |
-| Resource cleanup code | To be measured |
-| Existence-check/helper code | To be measured |
-| Wait/retry logic | To be measured |
+| Task | Bash (Imperative) | Terraform (Declarative) |
+|---|---|---|
+| Resource creation | Explicit AWS CLI commands | Resource declarations |
+| Resource dependencies | Manually ordered operations | Automatically resolved dependencies |
+| Resource existence checks | Custom checks and helper functions | Terraform state and refresh |
+| Resource cleanup | Separate deletion script | `terraform destroy` |
+| Configuration updates | Custom modification commands | `terraform plan` and `terraform apply` |
+| Drift detection | Requires additional comparison logic | Terraform detects differences during planning |
+| Retry and waiting | Scripted wait/retry operations | Terraform provider and resource lifecycle handling |
+
+### Cleanup Code
+
+The original deployment used a separate cleanup script, `delete_app_stack.sh`, containing 127 nonblank, non-comment lines.
+
+Terraform replaced the need for a separate infrastructure deletion script with:
+
+```powershell
+terraform destroy
+```
+
+Terraform determined which managed resources needed to be removed and handled their dependency order.
+
+### Existence Checks and Retry Logic
+
+I examined the previous Bash deployment and cleanup scripts to identify explicit waiting operations.
+
+| Script | Line | Operation |
+|---|---:|---|
+| `create_app_stack.sh` | 123 | `sleep 20` |
+| `create_app_stack.sh` | 369 | `aws elbv2 wait load-balancer-available` |
+| `delete_app_stack.sh` | 54 | `sleep 15` |
+| `delete_app_stack.sh` | 72 | `aws elbv2 wait load-balancers-deleted` |
+| `delete_app_stack.sh` | 122 | `sleep 10` |
+
+The search identified five explicit wait/sleep statements across the two scripts.
+
+These operations illustrate the procedural coordination required by the Bash implementation. Terraform uses its resource dependency graph and provider operations to coordinate infrastructure creation and deletion.
+
+This count represents explicit waiting statements, not the complete number of lines devoted to retry loops or existence-check helpers.
+
+
+### Evidence
+
+![Code comparison](screenshots/15_PartF_Experiment1_Code_Comparison.png)
 
 ### Analysis
 
-In the previous implementation, resource creation order, existence checks, and cleanup required procedural scripts.
+The Bash implementation contained 510 code lines, compared with 346 lines in the Terraform implementation.
 
-Terraform handled these responsibilities using declarative configuration, resource references, the state file, and its plan/apply workflow.
+This represents a reduction of approximately 32.2%.
 
-Terraform did not eliminate application bootstrapping, but it reduced infrastructure orchestration logic.
+Terraform reduced the need for manually maintained infrastructure orchestration, explicit dependency ordering, and separate cleanup scripts.
 
-![Recorded code comparison](screenshots/15_PartF_Experiment1_Code_Comparison.png)
+However, Terraform still required EC2 user-data bootstrapping, IAM configuration, state management, and troubleshooting.
 
-**Conclusion:** The main benefit of Terraform is repeatable management of infrastructure state, not simply a reduction in source-code lines.
+### Conclusion
+
+Terraform provided a more repeatable and maintainable approach to AWS infrastructure management.
+
+Its main advantage was not simply reducing code length but improving consistency, idempotence, dependency management, and drift detection.
 
 ---
+
 
 ## Experiment 2 — Dependency Graph
 
@@ -467,6 +521,27 @@ PASS: No Gemini-style API key found in Terraform state
 
 ![Terraform state secret check](screenshots/32_PartF_Experiment7_State_Secret_Check.png)
 
+
+
+
+### Additional Evidence
+
+![Terraform ignore_changes configuration](screenshots/33_PartF_Experiment7_Ignore_Changes.png)
+
+### Secret Protection Analysis
+
+The Gemini API key was stored in AWS Systems Manager Parameter Store as a SecureString instead of being hardcoded into the Terraform configuration.
+
+Terraform initially created the parameter with a placeholder value. The working API key was uploaded separately using the AWS CLI.
+
+The `ignore_changes = [value]` lifecycle configuration prevented subsequent Terraform applies from replacing the working API key with the original placeholder.
+
+The state inspection did not detect a Gemini-style API key, as recorded in the experiment evidence.
+
+This experiment demonstrates why infrastructure state and plan files should be protected, even when Terraform hides sensitive values from terminal output.
+
+Terraform state can contain sensitive resource attributes, so state files should not be committed to public repositories.
+
 **Conclusion:** Sensitive application values should be managed separately from ordinary infrastructure configuration. Terraform state and saved plan files must still be protected because they can contain sensitive information.
 
 ---
@@ -603,28 +678,28 @@ AWS CLI checks confirmed that no Lab 07 security groups or security group rules 
 
 The earlier deployment had also been destroyed successfully. A temporary second deployment was used to complete the missing listener recovery and Gemini error-log evidence, and this second deployment was destroyed afterward.
 
-### Estimated cost
 
-The assignment uses an estimated infrastructure rate of approximately **$0.07 per hour**.
+### AWS Cost Estimate
 
-```text
-Estimated AWS cost = Total running hours × $0.07
-```
+The assignment provides an approximate infrastructure operating cost of $0.07 per hour.
 
-The total running time should include both deployment periods.
+The Weather Advisor infrastructure was deployed twice. The original deployment was used for the main experiments, and the second deployment was used to complete the missing ALB listener recovery and Gemini error-log evidence.
 
-| Measurement | Value |
-|---|---|
-| First deployment duration | Not established from available screenshots |
-| Second deployment duration | Not established from available screenshots |
-| Total running time | Requires actual timing or billing data |
-| Estimated hourly rate | $0.07/hour |
-| Estimated total | Pending actual running hours |
+Both deployments were successfully destroyed after testing.
 
-The hourly estimate is for the lab calculation; actual billing can differ because of usage, pricing, storage, and other applicable AWS charges.
+The estimated cost is calculated using:
 
-The infrastructure was successfully destroyed and its cleanup verified.
+Estimated cost = Total infrastructure running hours × $0.07
 
+For an illustrative total runtime of 6 hours:
+
+Estimated cost = 6 × $0.07 = $0.42
+
+The six-hour runtime is an assumption rather than a measured duration. Exact creation and destruction timestamps were not available from the recorded terminal output, and the lab IAM user did not have permission to query AWS CloudTrail event history.
+
+Therefore, $0.42 is an illustrative calculation, not an exact charge or verified estimate of actual usage. Actual charges should be checked through AWS Billing and Cost Management.
+
+The final cleanup was verified with an empty Terraform state and AWS CLI checks confirming that no matching project security groups or security group rules remained.
 ---
 
 # 8. Review Questions — Section 13.1
